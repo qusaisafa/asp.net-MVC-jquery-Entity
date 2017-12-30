@@ -1,0 +1,216 @@
+﻿@model WebApplication1.Models.emailTemplateModel
+@{
+    Layout = null;
+}
+<script src="~/Scripts/jquery-1.10.2.min.js"></script>
+<script src="~/Scripts/bootstrap.min.js"></script>
+<link href="~/Content/bootstrap.min.css" rel="stylesheet" />
+
+<style>
+    .addbtn {
+        width: 50%;
+    }
+</style>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4 col-sm-4 col-xs-4">
+            <div class="page-header">
+                <h1>
+                    Interviews<small>Email</small>
+                </h1>
+            </div>
+            <div id="SetTemplateListInterviews">
+                <div class="LoadingStatus" style="color:red"></div>
+            </div>
+            <a href="#" class="btn btn-info addbtn" onclick="addNewTemplate(0,'interviews')">Add New Template</a> <br /><br />
+        </div>
+
+
+        <div class="col-md-4 col-sm-4 col-xs-4">
+            <div class="page-header">
+                <h1>
+                    Offers<small>Email</small>
+                </h1>
+            </div>
+            <div id="SetTemplateListOffers">
+                <div class="LoadingStatus" style="color:red"></div>
+            </div>
+            <a href="#" class="btn btn-info addbtn" onclick="addNewTemplate(0,'offers')">Add New Template</a> <br /><br />
+        </div>
+
+
+
+        <div class="col-md-4 col-sm-4 col-xs-4">
+            <div class="page-header">
+                <h1>
+                    General<small>Email</small>
+                </h1>
+            </div>
+            <div id="SetTemplateListGeneral">
+                <div class="LoadingStatus" style="color:red"></div>
+            </div>
+            <a href="#" class="btn btn-info addbtn" onclick="addNewTemplate(0,'general')">Add New Template</a> <br /><br />
+        </div>
+    </div>
+</div>
+   
+    @*Create A Popup Modal With Registration Form For Add Or Edit template Record*@
+
+    <div class="modal fade" id="MyModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <a href="#" class="close" data-dismiss="modal">&times;</a>
+                    <h4 id="ModalTitle"></h4>
+                </div>
+                <div class="modal-body">
+                    <form id="form">
+                        <fieldset id="SubmitForm">
+                            @Html.HiddenFor(m => m.TemplateId, new { @id = "TemplateId" })
+                            <div class="form-group">
+                                @Html.TextBoxFor(m => m.TemplateName, new { @id = "TemplateName", @class = "form-control", @placeholder = "Name*" })
+                            </div>
+                            <div class="form-group">
+                                @Html.TextBoxFor(m => m.TemplateType, new { @id = "TemplateType", @class = "form-control"})
+                            </div>
+                            <div class="form-group">
+                                @Html.TextBoxFor(m => m.TemplateTitle, new { @id = "TemplateTitle", @class = "form-control", @placeholder = "Title*" })
+                            </div>
+                            <div class="form-group">
+                                @Html.TextBoxFor(m => m.TemplateBody, new { @id = "TemplateBody", @class = "form-control", @placeholder = "Body*" })
+                            </div>
+                            <div class="form-group">
+                                <a href="#" class="btn btn-block btn-danger" id="SaveTemplateRecord">Save</a>
+                            </div>
+
+                        </fieldset>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @*Create A PopUp Modal For DeleteConfirmation*@
+
+    <div class="modal fade" id="DeleteConfirmation">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <a href="#" class="close" data-dismiss="modal">&times;</a>
+                    <h4>Delete Template Record</h4>
+                </div>
+                <div class="modal-body">
+                    <h4>Are You Sure? You Want To Delete This Record.</h4>
+                </div>
+                <div class="modal-footer">
+                    <a href="#" class="btn btn-primary" data-dismiss="modal" id="r">Cancle</a>
+                    <a href="#" class="btn btn-danger" onclick="ConfirmDelete()">Confirm</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        $(".LoadingStatus").html("Loading....");
+        $.get("/Home/GetTemplateList", null, DataBind);
+        function DataBind(TemplateList) {
+            //This Code For Receive All Data From Controller And Show It In Client Side
+            var SetDataOfInterviews = $("#SetTemplateListInterviews");
+            var SetDataOfOffers = $("#SetTemplateListOffers");
+            var SetDataGeneral = $("#SetTemplateListGeneral");
+            var Id = "";
+            for (var i = 0; i < TemplateList.length; i++) {
+                var Data = "<div class='panel panel-success row_" + TemplateList[i].TemplateId + "'>" +
+                    "<div class='panel-heading'>" +
+                    "<h3 class='panel-title'>" + TemplateList[i].TemplateName + "</h3></div>" +
+                    "<div class='panel-Body'>" + TemplateList[i].TemplateTitle + "</div>" +
+                    "<div class='panel-footer'>" + TemplateList[i].TemplateBody + 
+                    "<div class='editDeleteItems' style='display:none;'>"+
+                    "<a href='#' class='btn btn-warning' onclick='EditTemplateRecord(" + TemplateList[i].TemplateId + ")' ><span class='glyphicon glyphicon-edit'></span></a>" +
+                    "<a style='margin-left: 5px; 'href='#' class='btn btn-danger' onclick='DeleteTemplateRecord(" + TemplateList[i].TemplateId + ")'><span class='glyphicon glyphicon-trash'></span>" +
+                    "</div></div></div>";
+                if (TemplateList[i].TemplateType == "interviews")
+                    SetDataOfInterviews.append(Data);
+                else if (TemplateList[i].TemplateType == "offers")
+                    SetDataOfOffers.append(Data);
+                else {
+                    SetDataGeneral.append(Data);
+                }
+                $(".LoadingStatus").html(" ");
+
+            }
+        }
+        //Show The Popup Modal For Add New Template
+
+        function addNewTemplate(TemplateId,templateType) {
+            $("#form")[0].reset();
+            $("#TemplateId").val(0);
+            $("#TemplateType").val(templateType);
+            $("#ModalTitle").html("Add New " + templateType);
+            $("#MyModal").modal();
+
+        }
+
+        //Show The Popup Modal For Edit Template Record
+
+        function EditTemplateRecord(TemplateId) {
+            var url = "/Home/GetTemplateById?TemplateId=" + TemplateId;
+            $("#ModalTitle").html("Update Template Record");
+            $("#MyModal").modal();
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (data) {
+                    var obj = JSON.parse(data);
+                    $("#TemplateId").val(obj.TemplateId);
+                    $("#TemplateType").val(obj.TemplateType);
+                    $("#TemplateName").val(obj.TemplateName);
+                    $("#TemplateTitle").val(obj.TemplateTitle);
+                    $("#TemplateBody").val(obj.TemplateBody);
+
+                }
+            })
+        }
+
+        $("#SaveTemplateRecord").click(function () {
+            var data = $("#SubmitForm").serialize();
+            $.ajax({
+                type: "Post",
+                url: "/Home/SaveDataInDatabase",
+                data: data,
+                success: function (result) {
+                    alert("Success!..");
+                    window.location.href = "/Home/index";
+                    $("#MyModal").modal("hide");
+
+                }
+            })
+        })
+      
+        //Show The Popup Modal For DeleteComfirmation
+        var DeleteTemplateRecord = function (TemplateId) {
+            $("#TemplateId").val(TemplateId);
+            $("#DeleteConfirmation").modal("show");
+        }
+        var ConfirmDelete = function () {
+            var TemplateId = $("#TemplateId").val();
+            $.ajax({
+                type: "POST",
+                url: "/Home/DeleteTemplateRecord?TemplateId=" + TemplateId,
+                success: function (result) {
+                    $("#DeleteConfirmation").modal("hide");
+                    $(".row_" + TemplateId).remove();
+                }
+            })
+        }
+        $(".panel.panel-success")
+            .mouseenter(function () {
+                $(this).find(".editDeleteItems").show();
+            })
+            .mouseleave(function () {
+                $(this).find(".editDeleteItems").hide();
+        });
+
+        
+    </script>
